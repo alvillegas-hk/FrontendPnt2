@@ -103,7 +103,7 @@ async function cerrarSesion() {
         </aside>
 
         <!-- Acá entra cada pantalla -->
-        <main class="column">
+        <main class="column av-contenido">
           <slot></slot>
         </main>
       </div>
@@ -148,6 +148,11 @@ async function cerrarSesion() {
 }
 .av-marca-icono {
   margin-right: 0.4rem;
+}
+
+.av-contenido {
+  /* Permite que las tablas se desplacen dentro de la columna flexible. */
+  min-width: 0;
 }
 
 .av-cuerpo {

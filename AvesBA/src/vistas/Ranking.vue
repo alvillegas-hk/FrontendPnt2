@@ -43,7 +43,8 @@ onMounted(() => rankingStore.cargarRanking())
     <div v-else-if="filas.length === 0" class="notification is-info is-light">🐣 Todavía no hay jugadores en el ranking. ¡Jugá una partida para empezar!</div>
     <template v-else>
       <p class="av-texto-suave mb-3" aria-live="polite">Mostrando {{ filas.length }} jugadores · Total informado: {{ totalJugadores }}</p>
-      <div class="table-container">
+      <p id="ranking-desplazamiento" class="av-ayuda-tabla av-texto-suave is-size-7 mb-2">Deslizá la tabla hacia los costados para ver todas las estadísticas.</p>
+      <div class="table-container av-tabla-contenedor" tabindex="0" role="region" aria-label="Tabla de posiciones" aria-describedby="ranking-desplazamiento">
         <table class="table is-fullwidth is-hoverable">
           <caption class="has-text-left av-texto-suave mb-3">Clasificación por puntos acumulados</caption>
           <thead>
@@ -56,7 +57,7 @@ onMounted(() => rankingStore.cargarRanking())
           <tbody>
             <tr v-for="jugador in filas" :key="jugador.user_id" :class="{ 'av-mi-fila': jugador.user_id === authStore.jugador?.id }">
               <td class="av-puesto"><span v-if="jugador.posicion <= 3" aria-hidden="true">{{ medallas[jugador.posicion - 1] }}</span> {{ jugador.posicion }}</td>
-              <th scope="row">{{ jugador.nombre }} {{ jugador.apellido }} <span v-if="jugador.user_id === authStore.jugador?.id" class="tag is-primary is-light ml-2">Vos</span></th>
+              <th scope="row" class="av-jugador">{{ jugador.nombre }} {{ jugador.apellido }} <span v-if="jugador.user_id === authStore.jugador?.id" class="tag is-primary is-light ml-2">Vos</span></th>
               <td class="has-text-right av-puntos">{{ jugador.puntos_totales }}</td>
               <td class="has-text-right">{{ jugador.aciertos }}</td><td class="has-text-right">{{ jugador.fallos }}</td>
               <td class="has-text-right">{{ jugador.precision === null ? 'Sin respuestas' : `${jugador.precision}%` }}</td>
@@ -70,7 +71,37 @@ onMounted(() => rankingStore.cargarRanking())
 </template>
 
 <style scoped>
-.av-ranking { border-top: 5px solid var(--color-dorado); }
+.av-ranking {
+  border-top: 5px solid var(--color-dorado);
+  min-width: 0;
+  max-width: 100%;
+}
+.av-encabezado > div {
+  flex: 1 1 16rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.av-tabla-contenedor {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-crema);
+  border-radius: 8px;
+}
+.av-tabla-contenedor:focus-visible {
+  outline: 2px solid var(--color-musgo);
+  outline-offset: 3px;
+}
+.table {
+  min-width: 40rem;
+  margin-bottom: 0;
+}
+.av-jugador {
+  min-width: 10rem;
+  max-width: 18rem;
+  overflow-wrap: anywhere;
+}
+.av-ayuda-tabla { display: none; }
 .av-encabezado, .av-controles {
   display: flex;
   flex-wrap: wrap;
@@ -87,6 +118,13 @@ onMounted(() => rankingStore.cargarRanking())
   box-shadow: inset 4px 0 var(--color-musgo);
 }
 @media (max-width: 768px) {
-  .table { min-width: 620px; }
+  .av-ranking { padding: 1rem; }
+  .av-encabezado .button { width: 100%; }
+  .av-controles { gap: 0.75rem; }
+  .av-controles > .field, .av-controles > .button { width: 100%; }
+  .av-controles .select, .av-controles select { width: 100%; }
+}
+@media (max-width: 1200px) {
+  .av-ayuda-tabla { display: block; }
 }
 </style>
