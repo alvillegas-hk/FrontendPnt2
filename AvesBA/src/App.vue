@@ -7,17 +7,29 @@ import LayoutPrincipal from './components/LayoutPrincipal.vue'
 const route = useRoute()
 const authStore = useAuthStore()
 
-// La lógica de armar y enviar el beacon vive ahora en el store (auth.js: registrarTiempoConectado),
-// así se reutiliza también desde cerrarSesion() cuando el usuario hace logout explícito.
-const handleWindowClose = () => {
-  authStore.registrarTiempoConectado()
+const guardar = () => authStore.registrarTiempoConectado().catch(error => {
+  console.warn('El tiempo pendiente se reintentará guardar', error)
+})
+const alSalir = () => authStore.registrarTiempoConectado({ beacon: true, detener: true })
+const alVolver = () => { authStore.iniciarConteo(); guardar() }
+const alCambiarVisibilidad = () => {
+  if (document.visibilityState === 'hidden') {
+    authStore.registrarTiempoConectado({ beacon: true })
+  } else {
+    alVolver()
+  }
 }
-
-window.addEventListener('beforeunload', handleWindowClose)
+const intervalo = window.setInterval(guardar, 30000)
+window.addEventListener('pagehide', alSalir)
+window.addEventListener('pageshow', alVolver)
+document.addEventListener('visibilitychange', alCambiarVisibilidad)
 
 onUnmounted(() => {
-  handleWindowClose()
-  window.removeEventListener('beforeunload', handleWindowClose)
+  alSalir()
+  window.clearInterval(intervalo)
+  window.removeEventListener('pagehide', alSalir)
+  window.removeEventListener('pageshow', alVolver)
+  document.removeEventListener('visibilitychange', alCambiarVisibilidad)
 })
 </script>
 

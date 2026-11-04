@@ -2,7 +2,25 @@
 import VueApexCharts from 'vue3-apexcharts';
 import { obtenerMisMetricas, obtenerRanking } from '../servicios/metricasService.js';
 import { color, fuente } from '../estilos/graficos.js';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useAuthStore } from '../stores/auth.js';
+
+const authStore = useAuthStore();
+let intervalo;
+let actualizando = false;
+const errorTiempo = ref('');
+async function actualizarTiempo() {
+  if (actualizando) return;
+  actualizando = true;
+  try {
+    await authStore.registrarTiempoConectado();
+    metricas.value = await obtenerMisMetricas();
+    errorTiempo.value = '';
+  } catch (err) {
+    errorTiempo.value = 'No se pudo actualizar el tiempo conectado. Se reintentará automáticamente.';
+  } finally { actualizando = false; }
+}
+onUnmounted(() => clearInterval(intervalo));
 
 const metricas = ref(null);
 const ranking = ref([]);
@@ -10,7 +28,9 @@ const cargando = ref(true);
 const error = ref('');
 
 onMounted(async () => {
+  intervalo = setInterval(actualizarTiempo, 15000);
   try {
+    await authStore.registrarTiempoConectado().catch(() => {});
     metricas.value = await obtenerMisMetricas();
     ranking.value = await obtenerRanking(5);
   } catch (err) {
@@ -104,13 +124,14 @@ const formatearTiempo = segundos => {
 
     <p v-else-if="error" class="notification is-danger is-light">{{ error }}</p>
 
-    <div v-else-if="sinPartidas" class="box has-text-centered">
+    <div v-if="!cargando && !error && sinPartidas" class="box has-text-centered">
       <p class="is-size-1">🐣</p>
       <p class="title is-5">Todavía no jugaste ninguna partida</p>
       <router-link to="/modo" class="button is-primary av-elevable">Jugar mi primera partida</router-link>
     </div>
 
-    <template v-else>
+    <template v-if="!cargando && !error && metricas">
+      <p v-if="errorTiempo" class="notification is-warning is-light">{{ errorTiempo }}</p>
       <div class="columns is-multiline">
         <div class="column is-6-tablet is-4-desktop">
           <div class="box av-kpi">
@@ -150,7 +171,7 @@ const formatearTiempo = segundos => {
         </div>
       </div>
 
-      <div class="columns">
+      <div v-if="!sinPartidas" class="columns">
         <div class="column is-6">
           <div class="box">
             <h2 class="title is-5">Aciertos y fallos</h2>
@@ -165,7 +186,7 @@ const formatearTiempo = segundos => {
         </div>
       </div>
 
-      <div class="box">
+      <div v-if="!sinPartidas" class="box">
         <h2 class="title is-5">Vos contra el top 5</h2>
         <VueApexCharts type="bar" height="300" :series="serieComparacion" :options="opcionesComparacion" />
       </div>

@@ -12,6 +12,8 @@ const authStore = useAuthStore();
 
 // En celular el menú lateral se esconde y se abre con el botón ☰ de la barra
 const menuAbierto = ref(false);
+const cerrandoSesion = ref(false);
+const errorSesion = ref('');
 
 // Trae los datos del jugador para mostrar su nombre en la barra
 onMounted(() => {
@@ -21,8 +23,15 @@ onMounted(() => {
 // Invalida la sesión en el servidor y vuelve al Login
 // (antes estaba en SeleccionModo; ahora el botón vive en la barra)
 async function cerrarSesion() {
-  await authStore.cerrarSesion();
-  router.push('/');
+  if (cerrandoSesion.value) return;
+  cerrandoSesion.value = true;
+  errorSesion.value = '';
+  try {
+    await authStore.cerrarSesion();
+    router.push('/');
+  } catch {
+    errorSesion.value = 'No se pudo guardar tu tiempo. Volvé a intentar cerrar sesión.';
+  } finally { cerrandoSesion.value = false; }
 }
 </script>
 
@@ -41,7 +50,7 @@ async function cerrarSesion() {
           </span>
           <!-- Lugar vacío: SeleccionModo pone acá el botón "Modo" (solo en celular) con <Teleport> -->
           <span id="av-lugar-boton-modos"></span>
-          <button type="button" class="button is-light av-elevable av-boton-salir" @click="cerrarSesion">
+          <button type="button" class="button is-light av-elevable av-boton-salir" :disabled="cerrandoSesion" @click="cerrarSesion">
             Cerrar sesión
           </button>
         </div>
@@ -59,6 +68,7 @@ async function cerrarSesion() {
 
     <!-- Cuerpo: columnas de Bulma. En celulares se apilan solas. -->
     <section class="section av-cuerpo">
+      <p v-if="errorSesion" role="alert" class="notification is-danger is-light">{{ errorSesion }}</p>
       <div class="columns">
         <!-- Menú lateral. Clases de Bulma: box, menu, menu-label, menu-list.
              active-class="is-active" hace que Bulma pinte el link de la página actual. -->
