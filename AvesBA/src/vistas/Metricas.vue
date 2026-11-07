@@ -6,21 +6,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/auth.js';
 
 const authStore = useAuthStore();
-let intervalo;
-let actualizando = false;
-const errorTiempo = ref('');
-async function actualizarTiempo() {
-  if (actualizando) return;
-  actualizando = true;
-  try {
-    await authStore.registrarTiempoConectado();
-    metricas.value = await obtenerMisMetricas();
-    errorTiempo.value = '';
-  } catch (err) {
-    errorTiempo.value = 'No se pudo actualizar el tiempo conectado. Se reintentará automáticamente.';
-  } finally { actualizando = false; }
-}
-onUnmounted(() => clearInterval(intervalo));
+
+// Reloj en vivo: el dato llega una vez del back y el front lo hace avanzar (pedido del profe 03/11)
+let reloj;                        // id del setInterval, para poder cortarlo
+const momentoCarga = ref(null);   // Date.now() cuando llegaron las métricas
+const ahora = ref(Date.now());    // se actualiza cada 1 segundo
+
+onUnmounted(() => clearInterval(reloj));
 
 const metricas = ref(null);
 const ranking = ref([]);
@@ -28,10 +20,12 @@ const cargando = ref(true);
 const error = ref('');
 
 onMounted(async () => {
-  intervalo = setInterval(actualizarTiempo, 15000);
+  reloj = setInterval(() => { ahora.value = Date.now(); }, 1000);
   try {
     await authStore.registrarTiempoConectado().catch(() => {});
     metricas.value = await obtenerMisMetricas();
+    momentoCarga.value = Date.now();
+    ahora.value = momentoCarga.value;
     ranking.value = await obtenerRanking(5);
   } catch (err) {
     error.value = err.message;
@@ -105,12 +99,23 @@ const opcionesComparacion = computed(() => ({
   legend: { show: false },
   tooltip: { y: { formatter: valor => `${valor} puntos` } },
 }));
+// Segundos que pasaron desde que llegaron las métricas
+const segundosEnPantalla = computed(() => {
+  if (momentoCarga.value === null) return 0;
+  return Math.max(0, Math.floor((ahora.value - momentoCarga.value) / 1000));
+});
+
+// Lo que trae el back + lo que pasó mirando la pantalla
+const tiempoHoy = computed(() => (metricas.value?.tiempo_conectado_hoy_seg ?? 0) + segundosEnPantalla.value);
+const tiempoTotal = computed(() => (metricas.value?.tiempo_conectado_total_seg ?? 0) + segundosEnPantalla.value);
+
+// 2712 → "0:45:12"
 const formatearTiempo = segundos => {
   if (segundos == null) return '—';
   const horas = Math.floor(segundos / 3600);
   const minutos = Math.floor((segundos % 3600) / 60);
-  if (horas === 0) return `${minutos} min`;
-  return `${horas} h ${minutos} min`;
+  const segs = segundos % 60;
+  return `${horas}:${String(minutos).padStart(2, '0')}:${String(segs).padStart(2, '0')}`;
 };
 </script>
 
@@ -131,7 +136,6 @@ const formatearTiempo = segundos => {
     </div>
 
     <template v-if="!cargando && !error && metricas">
-      <p v-if="errorTiempo" class="notification is-warning is-light">{{ errorTiempo }}</p>
       <div class="columns is-multiline">
         <div class="column is-6-tablet is-4-desktop">
           <div class="box av-kpi">
@@ -160,13 +164,13 @@ const formatearTiempo = segundos => {
         <div class="column is-6-tablet is-4-desktop">
           <div class="box av-kpi">
             <p class="heading">Tiempo conectado hoy</p>
-            <p class="title is-3">⏱️ {{ formatearTiempo(metricas.tiempo_conectado_hoy_seg) }}</p>
+            <p class="title is-3">⏱️ {{ formatearTiempo(tiempoHoy) }}</p>
           </div>
         </div>
         <div class="column is-6-tablet is-4-desktop">
           <div class="box av-kpi">
             <p class="heading">Tiempo conectado total</p>
-            <p class="title is-3">⌛ {{ formatearTiempo(metricas.tiempo_conectado_total_seg) }}</p>
+            <p class="title is-3">⌛ {{formatearTiempo(tiempoTotal)}}</p>
           </div>
         </div>
       </div>
