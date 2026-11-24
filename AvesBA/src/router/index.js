@@ -31,7 +31,7 @@ router.beforeEach(async (to) => {
   await authStore.cargarPerfil();
 
   if (!authStore.estaLogueado) return '/';
-  if (to.meta.soloAdmin && !authStore.esAdmin) return '/metricas';
+  if (to.meta.soloAdmin && !authStore.esAdmin) return '/modo';
   return true;
 })
 

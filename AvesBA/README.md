@@ -1,38 +1,28 @@
-# AvesBA
+# 🐦 Aves BA — app de Vue
 
-This template should help get you started developing with Vue 3 in Vite.
+Esta carpeta es la aplicación de Vue 3 + Vite. La documentación completa (qué hace, arquitectura, rutas, stores y decisiones de diseño) está en el **[README principal](../README.md)**.
 
-## Recommended IDE Setup
+## Arranque rápido
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+```bash
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
 npm run dev
 ```
 
-### Compile and Minify for Production
+Por defecto el front le pega a `http://localhost:8000`. Para usar el backend publicado, creá `.env.local` con:
 
-```sh
-npm run build
+```bash
+VITE_API_BASE_URL=https://backendpnt2-production.up.railway.app
 ```
+
+| Comando | Para qué |
+|---|---|
+| `npm run dev` | Servidor de desarrollo en http://localhost:5173 |
+| `npm run build` | Versión optimizada en `dist/` |
+| `npm run preview` | Sirve `dist/` para probarlo |
+| `node --test tests/connection.test.js` | Tests del conteo de tiempo conectado |
+
+## Más documentación
+
+- [`ESTILOS.md`](ESTILOS.md): de dónde sale cada clase, color y animación.
+- [`GUIA-METRICAS.md`](GUIA-METRICAS.md): la guía paso a paso con la que se armó "Mis métricas".
